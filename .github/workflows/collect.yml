@@ -18,13 +18,15 @@ jobs:
       with: 
         ref: gh-pages
         path: 'gh-pages'
-    - name: Downloads data
+    - name: Downloads stations list
+      run: curl "https://velib-metropole-opendata.smoove.pro/opendata/Velib_Metropole/station_information.json" -o "gh-pages/rawdata/stations.json"
+    - name: Downloads stations data
       run: curl "https://velib-metropole-opendata.smoove.pro/opendata/Velib_Metropole/station_status.json" -o "gh-pages/rawdata/${RUN_DATE}.json"
     - name: Create index
       run: main/scripts/create_index.sh gh-pages/rawdata
     - name: Commit
+      working-directory: gh-pages
       run: |
-        cd gh-pages
         git config --global user.name 'Bot'
         git config --global user.email 'bot@users.noreply.github.com'
         git add .

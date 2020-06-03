@@ -10,22 +10,36 @@ if [ -z ${ROOT} ]; then
 fi
 
 FILES="${ROOT}/*"
-OUT_FILENAME="index.txt"
-OUT="${ROOT}/${OUT_FILENAME}"
+INDEX_FILENAME="index.txt"
+INDEX_PATH="${ROOT}/${INDEX_FILENAME}"
 
-touch "${OUT}"
-echo -n > "${OUT}" # Empty file
+containsElement () {
+  local e match="$1"
+  shift
+  for e; do [[ "$e" == "$match" ]] && return 0; done
+  return 1
+}
+
+touch "${INDEX_PATH}"
+echo -n > "${INDEX_PATH}" # Empty file
 
 for file in $FILES
 do
   FILENAME="${file##*/}"
 
-  if [ "${FILENAME}" == "${OUT_FILENAME}" ]; then
+  echo "Processing ${FILENAME}..."
+
+  if [ "${FILENAME}" == "${INDEX_FILENAME}" ]; then
+    echo "Ignored"
 		continue
   fi
 
-  echo "Processing ${FILENAME}..."
-  
+  if [ "${FILENAME}" == "stations.json" ]; then
+    echo "Ignored"
+		continue
+  fi
 
-  echo "${FILENAME}" >> "${OUT}"
+  echo "Adding to index"
+
+  echo "${FILENAME}" >> "${INDEX_PATH}"
 done
