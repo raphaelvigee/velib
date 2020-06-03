@@ -17,11 +17,11 @@ jobs:
     - uses: actions/checkout@v2
       with: 
         ref: gh-pages
-        path: 'data'
+        path: 'gh-pages'
     - name: Downloads data
-      run: curl "https://velib-metropole-opendata.smoove.pro/opendata/Velib_Metropole/station_status.json" -o "data/${RUN_DATE}.json"
+      run: curl "https://velib-metropole-opendata.smoove.pro/opendata/Velib_Metropole/station_status.json" -o "gh-pages/rawata/${RUN_DATE}.json"
     - name: Create index
-      run: main/scripts/create_index.sh data
+      run: main/scripts/create_index.sh gh-pages/rawdata
     - name: Commit
       run: |
         cd data
