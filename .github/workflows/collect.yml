@@ -16,7 +16,7 @@ jobs:
         path: 'main'
     - uses: actions/checkout@v2
       with: 
-        ref: data
+        ref: gh-pages
         path: 'data'
     - name: Downloads data
       run: curl "https://velib-metropole-opendata.smoove.pro/opendata/Velib_Metropole/station_status.json" -o "data/${RUN_DATE}.json"
