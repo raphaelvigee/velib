@@ -10,7 +10,7 @@ jobs:
 
     steps:
     - name: Set date
-      run: echo '::set-env name=RUN_DATE::$(date +%F_%H:%M)'
+      run: echo "::set-env name=RUN_DATE::$(date +%F_%H:%M)"
     - uses: actions/checkout@v2
       with: 
         path: 'main'
