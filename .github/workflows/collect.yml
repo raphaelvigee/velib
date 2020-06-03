@@ -13,12 +13,15 @@ jobs:
       run: echo '::set-env name=RUN_DATE::$(date +%F_%H:%M)'
     - uses: actions/checkout@v2
       with: 
+        path: 'main'
+    - uses: actions/checkout@v2
+      with: 
         ref: data
         path: 'data'
     - name: Downloads data
       run: curl "https://velib-metropole-opendata.smoove.pro/opendata/Velib_Metropole/station_status.json" -o "data/${RUN_DATE}.json"
     - name: Create index
-      run: ./scripts/create_index.sh data
+      run: main/scripts/create_index.sh data
     - name: Commit
       run: |
         cd data
