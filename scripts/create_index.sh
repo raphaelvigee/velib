@@ -10,19 +10,22 @@ if [ -z ${ROOT} ]; then
 fi
 
 FILES="${ROOT}/*"
-OUT="${ROOT}/index.txt"
+OUT_FILENAME="index.txt"
+OUT="${ROOT}/${OUT_FILENAME}"
 
 touch "${OUT}"
 echo -n > "${OUT}" # Empty file
 
-for f in $FILES
+for file in $FILES
 do
-  if [ "${f}" == "${OUT}" ]; then
+  FILENAME="${file##*/}"
+
+  if [ "${FILENAME}" == "${OUT_FILENAME}" ]; then
 		continue
   fi
 
-  echo "Processing $f..."
+  echo "Processing ${FILENAME}..."
   
 
-  echo "${f}" >> "${OUT}"
+  echo "${FILENAME}" >> "${OUT}"
 done
