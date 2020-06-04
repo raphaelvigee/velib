@@ -19,7 +19,7 @@ async function fetchAvailableData(): Promise<DataFile[]> {
     const res = await fetch('/rawdata/index.txt');
     const data = await res.text();
 
-    const files = data.split('\n').filter(l => l.length > 0);
+    const files = data.split('\n').filter((l) => l.length > 0);
 
     return files.map((file) => {
         const date = file.replace('.json', '');
@@ -120,8 +120,10 @@ function Map({ file }: MapProps) {
 
     const max = useMemo(() => Math.max(...stations.map((s) => s.num_bikes_available)), [stations]);
 
+    const center = useMemo(() => [2.3488, 48.8534] as [number, number], []);
+
     return (
-        <Mapbox style={'mapbox://styles/mapbox/streets-v9'} className={styles.map} center={[2.3488, 48.8534]}>
+        <Mapbox style={'mapbox://styles/mapbox/streets-v9'} className={styles.map} center={center}>
             <Source id={'stations'} geoJsonSource={{ type: 'geojson', data: geojson }} />
             <Layer
                 type="heatmap"
@@ -161,35 +163,20 @@ function Map({ file }: MapProps) {
 }
 
 export default function Heatmap() {
-    const [files, setFiles] = useState<DataFile[]>([]);
-    const [index, setIndex] = useState(0);
+    const [files, setFiles] = useState<DataFile[] | null>(null);
+    const [index, setIndex] = useState<number | null>(null);
+    const maxIndex = files ? files.length - 1 : 0;
 
     useEffect(() => {
         fetchAvailableData().then(setFiles);
     }, []);
 
-    if (files.length === 0) {
+    useEffect(() => {
+        setIndex(maxIndex);
+    }, [files]);
+
+    if (files === null || index === null) {
         return <>Loading files</>;
-    }
-
-    function prev() {
-        setIndex((ci) => {
-            if (ci === 0) {
-                return ci;
-            }
-
-            return ci - 1;
-        });
-    }
-
-    function next() {
-        setIndex((ci) => {
-            if (ci === files.length - 1) {
-                return ci;
-            }
-
-            return ci + 1;
-        });
     }
 
     const currentFile = files[index];
@@ -198,11 +185,15 @@ export default function Heatmap() {
         <div className={styles.view}>
             <header className={styles.header}>
                 <div>Map</div>
-                <button onClick={prev}>Previous</button>
+                <button disabled={index === 0} onClick={() => setIndex(index - 1)}>
+                    Previous
+                </button>
                 <span>
                     ({index}) {currentFile.date}
                 </span>
-                <button onClick={next}>Next</button>
+                <button disabled={index === maxIndex} onClick={() => setIndex(index + 1)}>
+                    Next
+                </button>
             </header>
 
             <Map file={currentFile} />
