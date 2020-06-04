@@ -31,10 +31,6 @@ async function fetchAvailableData(): Promise<DataFile[]> {
     });
 }
 
-interface MapProps {
-    file: DataFile;
-}
-
 interface DataFileStation {
     stationCode: string;
     station_id: number;
@@ -71,7 +67,12 @@ const Mapbox = ReactMapboxGl({
     accessToken: 'pk.eyJ1IjoicmFwaGFlbHZpZ2VlIiwiYSI6ImNrYXp4ZWN4bjAxcDEycWw5NmR2eTV3ZnYifQ.w-il_8J9WSbbDsBS9CXTHw',
 });
 
-function Map({ file }: MapProps) {
+interface MapProps {
+    file: DataFile;
+    showStations: boolean;
+}
+
+function Map({ file, showStations }: MapProps) {
     const [stations, setStations] = useState<EnhancedDataFileStation[]>([]);
     const { findStation } = useStations();
 
@@ -106,6 +107,7 @@ function Map({ file }: MapProps) {
                         properties: {
                             station_id: s.station_id,
                             bike_available: s.num_bikes_available,
+                            station_name: s.station.name,
                         },
                         geometry: {
                             type: 'Point',
@@ -123,7 +125,7 @@ function Map({ file }: MapProps) {
     const center = useMemo(() => [2.3488, 48.8534] as [number, number], []);
 
     return (
-        <Mapbox style={'mapbox://styles/mapbox/streets-v9'} className={styles.map} center={center}>
+        <Mapbox style={'mapbox://styles/mapbox/streets-v11'} className={styles.map} center={center}>
             <Source id={'stations'} geoJsonSource={{ type: 'geojson', data: geojson }} />
             <Layer
                 type="heatmap"
@@ -158,6 +160,29 @@ function Map({ file }: MapProps) {
                     'heatmap-radius': ['interpolate', ['linear'], ['zoom'], 0, 5, 9, 25],
                 }}
             />
+            {showStations ? (
+                <Layer
+                    type={'symbol'}
+                    id={'stations-locations'}
+                    sourceId={'stations'}
+                    layout={{
+                        'text-field': ['get', 'bike_available'],
+                        'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
+                        'text-letter-spacing': 0.05,
+                        'text-size': 11,
+                        // 'icon-image': 'circle-15',
+                        // 'icon-allow-overlap': true,
+                        // 'icon-size': 10,
+                    }}
+                    paint={{
+                        'text-color': '#fff',
+                        'text-halo-color': '#4e4e4e',
+                        'text-halo-width': 1,
+                    }}
+                />
+            ) : (
+                <></>
+            )}
         </Mapbox>
     );
 }
@@ -165,6 +190,7 @@ function Map({ file }: MapProps) {
 export default function Heatmap() {
     const [files, setFiles] = useState<DataFile[] | null>(null);
     const [index, setIndex] = useState<number | null>(null);
+    const [showStations, setShowStations] = useState(false);
     const maxIndex = files ? files.length - 1 : 0;
 
     useEffect(() => {
@@ -194,9 +220,12 @@ export default function Heatmap() {
                 <button disabled={index === maxIndex} onClick={() => setIndex(index + 1)}>
                     Next
                 </button>
+                <button onClick={() => setShowStations(!showStations)}>
+                    {showStations ? 'Hide' : 'Show'} stations
+                </button>
             </header>
 
-            <Map file={currentFile} />
+            <Map file={currentFile} showStations={showStations} />
         </div>
     );
 }

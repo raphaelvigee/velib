@@ -34,7 +34,7 @@ const config = Encore.getWebpackConfig();
 
 config.plugins.push(new HtmlWebpackPlugin({
     template: 'src/app.html',
-    title: 'Raphaël Vigee',
+    title: 'Velib',
     meta: {
         viewport: 'width=device-width, initial-scale=1, shrink-to-fit=no',
     },
