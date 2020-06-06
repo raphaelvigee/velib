@@ -186,7 +186,7 @@ function drawText({ canvas, text, color }: DrawTextProps) {
     const ctx = canvas.getContext('2d')!;
 
     ctx.fillStyle = color;
-    ctx.font = '300 11px Arial';
+    ctx.font = '400 11px Arial';
     ctx.textBaseline = 'middle';
     ctx.textAlign = 'center';
 
@@ -200,7 +200,7 @@ function fromEntries<T>(iterable: Array<[string, T]>): { [key: string]: T } {
     }, {});
 }
 
-const colors = { mechanical: '#80c664', ebike: '#16a2a8', dock: '#d468c9' };
+const colors = { mechanical: '#6ba553', ebike: '#16a2a8', dock: '#d468c9' };
 
 function Map({ file, showStations, numericalProp }: MapProps) {
     const [stations, setStations] = useState<EnhancedDataFileStation[]>([]);
@@ -297,6 +297,7 @@ function Map({ file, showStations, numericalProp }: MapProps) {
                 const canvas = document.createElement('canvas');
                 canvas.width = 25;
                 canvas.height = 25;
+                const ctx = canvas.getContext('2d')!;
 
                 map.on('styleimagemissing', (e) => {
                     const id = e.id; // id of the missing image
@@ -340,30 +341,33 @@ function Map({ file, showStations, numericalProp }: MapProps) {
                                     drawCircle({ canvas, fill: colors.dock });
                                     break;
                             }
-                        } else {
-                            drawCircle({ canvas, fill: '#fc6262' });
-                        }
 
-                        const getTextColor = () => {
-                            if (props.is_functional) {
+                            const getTextColor = () => {
                                 switch (numProp) {
                                     case 'bikes_available':
                                         return '#000';
                                     default:
                                         return '#fff';
                                 }
-                            } else {
-                                return '#fff';
-                            }
-                        };
+                            };
 
-                        drawText({
-                            canvas,
-                            text: `${props[numProp]}`,
-                            color: getTextColor(),
-                        });
+                            drawText({
+                                canvas,
+                                text: `${props[numProp]}`,
+                                color: getTextColor(),
+                            });
+                        } else {
+                            drawCircle({ canvas, fill: '#fc6262', stroke: { width: 3, color: '#fff' } });
 
-                        const ctx = canvas.getContext('2d')!;
+                            ctx.fillStyle = '#fff'
+
+                            const recWidth = 13;
+                            const recHeight = 4;
+                            const xPos = canvas.width / 2 - recWidth / 2;
+                            const yPos = canvas.height / 2 - recHeight / 2;
+                            ctx.fillRect(xPos, yPos, recWidth, recHeight);
+                        }
+
                         const im = ctx.getImageData(0, 0, canvas.width, canvas.height);
                         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
