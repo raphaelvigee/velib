@@ -87,7 +87,7 @@ config.plugins.push(
 if (Encore.isDevServer()) {
     config.devServer.proxy = {
         '*': {
-            target: 'http://velib.raphaelvigee.com',
+            target: 'https://velib.raphaelvigee.com',
             secure: false,
             changeOrigin: true,
         }

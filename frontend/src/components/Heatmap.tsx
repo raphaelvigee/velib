@@ -147,7 +147,7 @@ function Map({ file, showStations, numericalProp }: MapProps) {
 
     return (
         <Mapbox
-            style={'mapbox://styles/mapbox/streets-v11'}
+            style={'mapbox://styles/mapbox/streets-v11?optimize=true'}
             className={styles.map}
             center={center}
             onStyleLoad={(map) => {
@@ -192,7 +192,8 @@ function Map({ file, showStations, numericalProp }: MapProps) {
                         1,
                         'rgb(178,24,43)',
                     ],
-                    'heatmap-radius': ['interpolate', ['linear'], ['zoom'], 0, 5, 9, 25],
+                    'heatmap-radius': ['interpolate', ['linear'], ['zoom'], 0, 5, 12, 30],
+                    'heatmap-opacity': ['interpolate', ['linear'], ['zoom'], 13, 0.9, 14, 0],
                 }}
             />
             {showStations ? (
