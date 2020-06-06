@@ -70,9 +70,24 @@ const Mapbox = ReactMapboxGl({
 interface MapProps {
     file: DataFile;
     showStations: boolean;
+    numericalProp: NumericalPropType;
 }
 
-function Map({ file, showStations }: MapProps) {
+type NumericalPropType = 'bikes_available' | 'bikes_available_mechanical' | 'bikes_available_ebike' | 'docks_available';
+
+function findBikesType<S extends DataFileStation, P extends 'mechanical' | 'ebike'>(s: S, prop: P): number {
+    const bikeType = s.num_bikes_available_types.find((t) => prop in t);
+
+    if (bikeType) {
+        const typedType = (bikeType as unknown) as { [k in P]: number };
+
+        return typedType[prop];
+    }
+
+    return 0;
+}
+
+function Map({ file, showStations, numericalProp }: MapProps) {
     const [stations, setStations] = useState<EnhancedDataFileStation[]>([]);
     const { findStation } = useStations();
 
@@ -97,30 +112,35 @@ function Map({ file, showStations }: MapProps) {
         () => ({
             type: 'FeatureCollection',
             features: stations
+                .filter((s) => !!s.station)
                 .map((s) => {
-                    if (!s.station) {
-                        return null;
-                    }
+                    const stationData = s.station!;
 
                     return {
                         type: 'Feature',
                         properties: {
                             station_id: s.station_id,
-                            bike_available: s.num_bikes_available,
-                            station_name: s.station.name,
+                            station_name: stationData.name,
+
+                            bikes_available: s.num_bikes_available,
+                            bikes_available_mechanical: findBikesType(s, 'mechanical'),
+                            bikes_available_ebike: findBikesType(s, 'ebike'),
+                            docks_available: s.num_docks_available,
                         },
                         geometry: {
                             type: 'Point',
-                            coordinates: [s.station.lon, s.station.lat, 0],
+                            coordinates: [stationData.lon, stationData.lat, 0],
                         },
                     };
-                })
-                .filter((s) => !!s),
+                }),
         }),
         [stations],
     );
 
-    const max = useMemo(() => Math.max(...stations.map((s) => s.num_bikes_available)), [stations]);
+    const max = useMemo(() => Math.max(...geojson.features.map((f) => f.properties[numericalProp])), [
+        stations,
+        numericalProp,
+    ]);
 
     const center = useMemo(() => [2.3488, 48.8534] as [number, number], []);
 
@@ -133,7 +153,7 @@ function Map({ file, showStations }: MapProps) {
                 sourceId={'stations'}
                 paint={{
                     // Increase the heatmap weight based on frequency and property magnitude
-                    'heatmap-weight': ['interpolate', ['linear'], ['get', 'bike_available'], 0, 0, max, 1],
+                    'heatmap-weight': ['interpolate', ['linear'], ['get', numericalProp], 0, 0, max, 1],
                     // Increase the heatmap color weight weight by zoom level
                     // heatmap-intensity is a multiplier on top of heatmap-weight
                     'heatmap-intensity': 3,
@@ -166,13 +186,11 @@ function Map({ file, showStations }: MapProps) {
                     id={'stations-locations'}
                     sourceId={'stations'}
                     layout={{
-                        'text-field': ['get', 'bike_available'],
+                        'text-field': ['get', numericalProp],
                         'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
                         'text-letter-spacing': 0.05,
                         'text-size': 11,
-                        // 'icon-image': 'circle-15',
-                        // 'icon-allow-overlap': true,
-                        // 'icon-size': 10,
+                        'symbol-sort-key': ['interpolate', ['linear'], ['get', numericalProp], 0, max, max, 0],
                     }}
                     paint={{
                         'text-color': '#fff',
@@ -190,7 +208,8 @@ function Map({ file, showStations }: MapProps) {
 export default function Heatmap() {
     const [files, setFiles] = useState<DataFile[] | null>(null);
     const [index, setIndex] = useState<number | null>(null);
-    const [showStations, setShowStations] = useState(false);
+    const [showStations, setShowStations] = useState(true);
+    const [numericalProp, setNumProp] = useState<NumericalPropType>('bikes_available');
     const maxIndex = files ? files.length - 1 : 0;
 
     useEffect(() => {
@@ -207,10 +226,17 @@ export default function Heatmap() {
 
     const currentFile = files[index];
 
+    function filterButton(prop: NumericalPropType, name: string) {
+        return (
+            <button onClick={() => setNumProp(prop)}>
+                {numericalProp === prop && '* '} {name}
+            </button>
+        );
+    }
+
     return (
         <div className={styles.view}>
             <header className={styles.header}>
-                <div>Map</div>
                 <button disabled={index === 0} onClick={() => setIndex(index - 1)}>
                     Previous
                 </button>
@@ -224,8 +250,14 @@ export default function Heatmap() {
                     {showStations ? 'Hide' : 'Show'} stations
                 </button>
             </header>
+            <header className={styles.header}>
+                {filterButton('bikes_available', 'All bikes')}
+                {filterButton('bikes_available_mechanical', 'Mechanical')}
+                {filterButton('bikes_available_ebike', 'Ebike')}
+                {filterButton('docks_available', 'Docks')}
+            </header>
 
-            <Map file={currentFile} showStations={showStations} />
+            <Map file={currentFile} showStations={showStations} numericalProp={numericalProp} />
         </div>
     );
 }
