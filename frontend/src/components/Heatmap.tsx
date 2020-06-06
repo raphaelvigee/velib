@@ -7,6 +7,7 @@ import * as React from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import useStations, { Station } from '../hooks/withStations';
 import ReactMapboxGl, { Layer, Source } from 'react-mapbox-gl';
+import * as mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import styles from './Heatmap.scss?module';
 
@@ -145,7 +146,21 @@ function Map({ file, showStations, numericalProp }: MapProps) {
     const center = useMemo(() => [2.3488, 48.8534] as [number, number], []);
 
     return (
-        <Mapbox style={'mapbox://styles/mapbox/streets-v11'} className={styles.map} center={center}>
+        <Mapbox
+            style={'mapbox://styles/mapbox/streets-v11'}
+            className={styles.map}
+            center={center}
+            onStyleLoad={(map) => {
+                map.addControl(
+                    new mapboxgl.GeolocateControl({
+                        positionOptions: {
+                            enableHighAccuracy: true,
+                        },
+                        trackUserLocation: true,
+                    }),
+                );
+            }}
+        >
             <Source id={'stations'} geoJsonSource={{ type: 'geojson', data: geojson }} />
             <Layer
                 type="heatmap"

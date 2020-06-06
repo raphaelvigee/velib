@@ -1415,6 +1415,13 @@
   resolved "https://registry.yarnpkg.com/@types/json-schema/-/json-schema-7.0.4.tgz#38fd73ddfd9b55abb1e1b2ed578cb55bd7b7d339"
   integrity sha512-8+KAKzEvSUdeo+kmqnKrqgeE+LcA0tjYWFY7RPProVYwnqDjukzO+3b6dLD56rYX5TdWejnEOLJYOIeh4CXKuA==
 
+"@types/mapbox-gl@^1.10.2":
+  version "1.10.2"
+  resolved "https://registry.yarnpkg.com/@types/mapbox-gl/-/mapbox-gl-1.10.2.tgz#ba903e9d70e69200efe29444ee33e0c111f9d53c"
+  integrity sha512-fgsFVivgopfge1HwUmkMqjEg0XO0sMqI2au3GKhg8g6vpexjszvy63chNpLiz5MOLu4APbKXm18JsKSmhzzoMw==
+  dependencies:
+    "@types/geojson" "*"
+
 "@types/node@*":
   version "10.12.10"
   resolved "https://registry.yarnpkg.com/@types/node/-/node-10.12.10.tgz#4fa76e6598b7de3f0cb6ec3abacc4f59e5b3a2ce"
