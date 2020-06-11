@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import useStations, { Station } from './useStations';
+import { STATIONS_STATUS_FOLDER_URL, STATIONS_STATUS_INDEX_URL } from '../config';
 
 export interface DataFile {
     url: string;
@@ -7,7 +8,7 @@ export interface DataFile {
 }
 
 async function fetchAvailableData(): Promise<DataFile[]> {
-    const res = await fetch('/rawdata/index.txt');
+    const res = await fetch(STATIONS_STATUS_INDEX_URL);
     const data = await res.text();
 
     const files = data.split('\n').filter((l) => l.length > 0);
@@ -16,7 +17,7 @@ async function fetchAvailableData(): Promise<DataFile[]> {
         const date = file.replace('.json', '');
 
         return {
-            url: `/rawdata/${file}`,
+            url: `${STATIONS_STATUS_FOLDER_URL}/${file}`,
             date,
         };
     });

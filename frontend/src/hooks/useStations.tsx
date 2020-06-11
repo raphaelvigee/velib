@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { ReactNode, useCallback, useContext, useEffect, useState } from 'react';
+import { STATIONS_URL } from '../config';
 
 export interface Station {
     station_id: number;
@@ -17,7 +18,7 @@ export function StationsProvider({ children }: { children: ReactNode }) {
     const [stations, setStations] = useState<Station[] | null>(null);
 
     async function fetchStations() {
-        const res = await fetch('/rawdata/stations.json');
+        const res = await fetch(STATIONS_URL);
 
         const data = await res.json();
 

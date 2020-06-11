@@ -4,7 +4,7 @@ set -e
 
 ROOT=${1}
 
-if [ -z ${ROOT} ]; then 
+if [[ -z ${ROOT} ]]; then
 	echo "Root is missing"
 	exit
 fi
@@ -23,20 +23,20 @@ containsElement () {
 touch "${INDEX_PATH}"
 echo -n > "${INDEX_PATH}" # Empty file
 
-for file in $FILES
+for file in ${FILES}
 do
   FILENAME="${file##*/}"
 
   echo "Processing ${FILENAME}..."
 
-  if [ "${FILENAME}" == "${INDEX_FILENAME}" ]; then
+  if [[ "${FILENAME}" == "${INDEX_FILENAME}" ]]; then
     echo "Ignored"
-		continue
+    continue
   fi
 
-  if [ "${FILENAME}" == "stations.json" ]; then
+  if [[ "${FILENAME}" == "stations.json" ]]; then
     echo "Ignored"
-		continue
+    continue
   fi
 
   echo "Adding to index"
