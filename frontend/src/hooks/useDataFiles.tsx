@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import useStations, { Station } from './useStations';
 import { STATIONS_STATUS_FOLDER_URL, STATIONS_STATUS_INDEX_URL } from '../config';
+import { DateTime } from 'luxon';
 
 export interface DataFile {
     url: string;
-    date: string;
+    date: DateTime;
 }
 
 async function fetchAvailableData(): Promise<DataFile[]> {
@@ -14,7 +15,9 @@ async function fetchAvailableData(): Promise<DataFile[]> {
     const files = data.split('\n').filter((l) => l.length > 0);
 
     return files.map((file) => {
-        const date = file.replace('.json', '');
+        const dateStr = file.replace('.json', '');
+
+        const date = DateTime.fromFormat(`${dateStr} UTC`, 'yyyy-MM-dd_HH:mm z');
 
         return {
             url: `${STATIONS_STATUS_FOLDER_URL}/${file}`,

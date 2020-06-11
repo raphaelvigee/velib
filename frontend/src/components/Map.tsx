@@ -4,6 +4,7 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 import styles from './Map.scss?module';
 import Heatmap, { NumericalPropType } from './Heatmap';
 import { useDataFiles } from '../hooks/useDataFiles';
+import { DateTime } from 'luxon';
 
 export default function Map() {
     const files = useDataFiles();
@@ -37,7 +38,7 @@ export default function Map() {
                     Previous
                 </button>
                 <span>
-                    ({index}) {currentFile.date}
+                    ({index}) {currentFile.date.toLocaleString(DateTime.DATETIME_MED)}
                 </span>
                 <button disabled={index === maxIndex} onClick={() => setIndex(index + 1)}>
                     Next
