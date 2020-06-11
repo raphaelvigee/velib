@@ -1,11 +1,11 @@
 import * as React from 'react';
-import { StationsProvider } from '../hooks/withStations';
-import Heatmap from './Heatmap';
+import { StationsProvider } from '../hooks/useStations';
+import Map from './Map';
 
 export default function App() {
     return (
         <StationsProvider>
-            <Heatmap />
+            <Map />
         </StationsProvider>
     );
 }

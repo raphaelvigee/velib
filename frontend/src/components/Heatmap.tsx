@@ -1,80 +1,15 @@
-/*
-DISCLAIMER: Yeah this is a bit dirty, but it works ¯\_(ツ)_/¯
-I promise I will clean this up.
-*/
-
-import * as React from 'react';
-import { useEffect, useMemo, useRef, useState } from 'react';
-import useStations, { Station } from '../hooks/withStations';
-import ReactMapboxGl, { Layer, Source } from 'react-mapbox-gl';
-import * as mapboxgl from 'mapbox-gl';
-import 'mapbox-gl/dist/mapbox-gl.css';
+import { useEffect, useMemo, useRef } from 'react';
 import styles from './Heatmap.scss?module';
+import * as mapboxgl from 'mapbox-gl';
+import ReactMapboxGl, { Layer, Source } from 'react-mapbox-gl';
+import * as React from 'react';
+import { DataFile, DataFileStation, useStationsData } from '../hooks/useDataFiles';
 
-interface DataFile {
-    url: string;
-    date: string;
-}
-
-async function fetchAvailableData(): Promise<DataFile[]> {
-    const res = await fetch('/rawdata/index.txt');
-    const data = await res.text();
-
-    const files = data.split('\n').filter((l) => l.length > 0);
-
-    return files.map((file) => {
-        const date = file.replace('.json', '');
-
-        return {
-            url: `/rawdata/${file}`,
-            date,
-        };
-    });
-}
-
-interface DataFileStation {
-    stationCode: string;
-    station_id: number;
-    num_bikes_available: number;
-    numBikesAvailable: number;
-    num_bikes_available_types: [
-        {
-            mechanical: number;
-        },
-        {
-            ebike: number;
-        },
-    ];
-    num_docks_available: number;
-    numDocksAvailable: number;
-    is_installed: number;
-    is_returning: number;
-    is_renting: number;
-    last_reported: number;
-}
-
-async function fetchDataFileStations(file: DataFile): Promise<DataFileStation[]> {
-    const res = await fetch(file.url);
-    const data = await res.json();
-
-    return data.data.stations;
-}
-
-interface EnhancedDataFileStation extends DataFileStation {
-    station: Station | null;
-}
-
-const Mapbox = ReactMapboxGl({
-    accessToken: 'pk.eyJ1IjoicmFwaGFlbHZpZ2VlIiwiYSI6ImNrYXp4ZWN4bjAxcDEycWw5NmR2eTV3ZnYifQ.w-il_8J9WSbbDsBS9CXTHw',
-});
-
-interface MapProps {
-    file: DataFile;
-    showStations: boolean;
-    numericalProp: NumericalPropType;
-}
-
-type NumericalPropType = 'bikes_available' | 'bikes_available_mechanical' | 'bikes_available_ebike' | 'docks_available';
+export type NumericalPropType =
+    | 'bikes_available'
+    | 'bikes_available_mechanical'
+    | 'bikes_available_ebike'
+    | 'docks_available';
 
 function findBikesType<S extends DataFileStation, P extends 'mechanical' | 'ebike'>(s: S, prop: P): number {
     const bikeType = s.num_bikes_available_types.find((t) => prop in t);
@@ -202,26 +137,18 @@ function fromEntries<T>(iterable: Array<[string, T]>): { [key: string]: T } {
 
 const colors = { mechanical: '#6ba553', ebike: '#16a2a8', dock: '#d468c9' };
 
-function Map({ file, showStations, numericalProp }: MapProps) {
-    const [stations, setStations] = useState<EnhancedDataFileStation[]>([]);
-    const { findStation } = useStations();
+const Mapbox = ReactMapboxGl({
+    accessToken: 'pk.eyJ1IjoicmFwaGFlbHZpZ2VlIiwiYSI6ImNrYXp4ZWN4bjAxcDEycWw5NmR2eTV3ZnYifQ.w-il_8J9WSbbDsBS9CXTHw',
+});
 
-    function enhanceStation(station: DataFileStation): EnhancedDataFileStation {
-        return {
-            ...station,
-            station: findStation(station.station_id),
-        };
-    }
+interface HeatmapProps {
+    file: DataFile;
+    showStations: boolean;
+    numericalProp: NumericalPropType;
+}
 
-    async function handleStations() {
-        const rawStations = await fetchDataFileStations(file);
-
-        setStations(rawStations.map(enhanceStation));
-    }
-
-    useEffect(() => {
-        handleStations();
-    }, [file]);
+export default function Heatmap({ file, showStations, numericalProp }: HeatmapProps) {
+    const stations = useStationsData(file);
 
     const mappedFeatures = useMemo(() => {
         const pairs = stations
@@ -359,7 +286,7 @@ function Map({ file, showStations, numericalProp }: MapProps) {
                         } else {
                             drawCircle({ canvas, fill: '#fc6262', stroke: { width: 3, color: '#fff' } });
 
-                            ctx.fillStyle = '#fff'
+                            ctx.fillStyle = '#fff';
 
                             const recWidth = 13;
                             const recHeight = 4;
@@ -427,62 +354,5 @@ function Map({ file, showStations, numericalProp }: MapProps) {
                 <></>
             )}
         </Mapbox>
-    );
-}
-
-export default function Heatmap() {
-    const [files, setFiles] = useState<DataFile[] | null>(null);
-    const [index, setIndex] = useState<number | null>(null);
-    const [showStations, setShowStations] = useState(true);
-    const [numericalProp, setNumProp] = useState<NumericalPropType>('bikes_available');
-    const maxIndex = files ? files.length - 1 : 0;
-
-    useEffect(() => {
-        fetchAvailableData().then(setFiles);
-    }, []);
-
-    useEffect(() => {
-        setIndex(maxIndex);
-    }, [files]);
-
-    if (files === null || index === null) {
-        return <>Loading files</>;
-    }
-
-    const currentFile = files[index];
-
-    function filterButton(prop: NumericalPropType, name: string) {
-        return (
-            <button onClick={() => setNumProp(prop)}>
-                {numericalProp === prop && '* '} {name}
-            </button>
-        );
-    }
-
-    return (
-        <div className={styles.view}>
-            <header className={styles.header}>
-                <button disabled={index === 0} onClick={() => setIndex(index - 1)}>
-                    Previous
-                </button>
-                <span>
-                    ({index}) {currentFile.date}
-                </span>
-                <button disabled={index === maxIndex} onClick={() => setIndex(index + 1)}>
-                    Next
-                </button>
-                <button onClick={() => setShowStations(!showStations)}>
-                    {showStations ? 'Hide' : 'Show'} stations
-                </button>
-            </header>
-            <header className={styles.header}>
-                {filterButton('bikes_available', 'All bikes')}
-                {filterButton('bikes_available_mechanical', 'Mechanical')}
-                {filterButton('bikes_available_ebike', 'Ebike')}
-                {filterButton('docks_available', 'Docks')}
-            </header>
-
-            <Map file={currentFile} showStations={showStations} numericalProp={numericalProp} />
-        </div>
     );
 }
