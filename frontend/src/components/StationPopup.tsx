@@ -14,7 +14,7 @@ export default function StationPopup({ feature }: StationPopupProps) {
                 <div>
                     <div>Available: {props.bikes_available}</div>
                     <div>Mechanical: {props.bikes_available_mechanical}</div>
-                    <div>Mechanical: {props.bikes_available_ebike}</div>
+                    <div>Ebike: {props.bikes_available_ebike}</div>
                     <div>Docks: {props.docks_available}</div>
                 </div>
             </div>
