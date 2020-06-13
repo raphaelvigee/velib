@@ -38,7 +38,8 @@ export default function Map() {
                     Previous
                 </button>
                 <span>
-                    ({index}) {currentFile.date.toLocaleString(DateTime.DATETIME_MED)}
+                    {currentFile.live && <span style={{ color: 'red' }}>*</span>}({index}){' '}
+                    {currentFile.date.toLocaleString(DateTime.DATETIME_MED)}
                 </span>
                 <button disabled={index === maxIndex} onClick={() => setIndex(index + 1)}>
                     Next

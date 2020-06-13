@@ -6,6 +6,7 @@ import { DateTime } from 'luxon';
 export interface DataFile {
     url: string;
     date: DateTime;
+    live?: boolean;
 }
 
 async function fetchJson<R>(url: string): Promise<R> {
@@ -25,7 +26,7 @@ async function fetchLines<R>(url: string): Promise<string[]> {
 async function fetchAvailableData(): Promise<DataFile[]> {
     const files = await fetchLines(`${STATIONS_STATUS_FOLDER_URL}/index.txt`);
 
-    return files.map((file) => {
+    const datafiles = files.map((file) => {
         const dateStr = file.replace('.json', '');
 
         const date = DateTime.fromFormat(`${dateStr} UTC`, 'yyyy-MM-dd_HH:mm z');
@@ -35,6 +36,17 @@ async function fetchAvailableData(): Promise<DataFile[]> {
             date,
         };
     });
+
+    const liveUrl = 'https://velib-metropole-opendata.smoove.pro/opendata/Velib_Metropole/station_status.json';
+
+    return [
+        ...datafiles,
+        {
+            url: `https://cors-anywhere.herokuapp.com/${liveUrl}`,
+            date: DateTime.local(),
+            live: true,
+        },
+    ];
 }
 
 async function fetchDataFileStations(file: DataFile): Promise<DataFileStation[]> {
