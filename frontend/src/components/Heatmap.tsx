@@ -283,7 +283,7 @@ export default function Heatmap({ file, showStations, numericalProp }: HeatmapPr
                     sourceId={'stations'}
                     layout={{
                         'symbol-sort-key': ['interpolate', ['linear'], ['get', numericalProp], 0, max, max, 0],
-                        'icon-image': `stationv1::{station_id}::${numericalProp}`,
+                        'icon-image': `stationv1::{station_id}::${numericalProp}::${file.date.toSeconds()}`,
                         'icon-size': 0.5,
                     }}
                     paint={{}}
