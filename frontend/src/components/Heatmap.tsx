@@ -113,7 +113,7 @@ function drawText({ canvas, text, color }: DrawTextProps) {
     const ctx = canvas.getContext('2d')!;
 
     ctx.fillStyle = color;
-    ctx.font = '400 11px Arial';
+    ctx.font = '400 22px Arial';
     ctx.textBaseline = 'middle';
     ctx.textAlign = 'center';
 
@@ -176,8 +176,8 @@ export default function Heatmap({ file, showStations, numericalProp }: HeatmapPr
                 );
 
                 const canvas = document.createElement('canvas');
-                canvas.width = 25;
-                canvas.height = 25;
+                canvas.width = 50;
+                canvas.height = 50;
                 const ctx = canvas.getContext('2d')!;
 
                 map.on('styleimagemissing', (e) => {
@@ -238,12 +238,12 @@ export default function Heatmap({ file, showStations, numericalProp }: HeatmapPr
                                 color: getTextColor(),
                             });
                         } else {
-                            drawCircle({ canvas, fill: '#fc6262', stroke: { width: 3, color: '#fff' } });
+                            drawCircle({ canvas, fill: '#fc6262', stroke: { width: 6, color: '#fff' } });
 
                             ctx.fillStyle = '#fff';
 
-                            const recWidth = 13;
-                            const recHeight = 4;
+                            const recWidth = 26;
+                            const recHeight = 8;
                             const xPos = canvas.width / 2 - recWidth / 2;
                             const yPos = canvas.height / 2 - recHeight / 2;
                             ctx.fillRect(xPos, yPos, recWidth, recHeight);
@@ -284,6 +284,7 @@ export default function Heatmap({ file, showStations, numericalProp }: HeatmapPr
                     layout={{
                         'symbol-sort-key': ['interpolate', ['linear'], ['get', numericalProp], 0, max, max, 0],
                         'icon-image': `stationv1::{station_id}::${numericalProp}`,
+                        'icon-size': 0.5,
                     }}
                     paint={{}}
                 />
