@@ -45,7 +45,7 @@ export default function Map() {
                     Next
                 </button>
                 <button onClick={() => setShowStations(!showStations)}>
-                    {showStations ? 'Hide' : 'Show'} stations
+                    {showStations ? 'Show Heatmap' : 'Show stations'}
                 </button>
             </header>
             <header className={styles.header}>

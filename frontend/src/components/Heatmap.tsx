@@ -148,6 +148,7 @@ export default function Heatmap({ file, showStations, numericalProp }: HeatmapPr
         numericalProp,
     ]);
 
+    // That's a hack to have a constant ref in the mapbox callbacks
     const store = useRef({
         mappedFeatures,
     });
@@ -274,42 +275,9 @@ export default function Heatmap({ file, showStations, numericalProp }: HeatmapPr
             }}
         >
             <Source id={'stations'} geoJsonSource={{ type: 'geojson', data: geojson }} />
-            <Layer
-                type="heatmap"
-                id="bike-heatmap"
-                sourceId={'stations'}
-                paint={{
-                    // Increase the heatmap weight based on frequency and property magnitude
-                    'heatmap-weight': ['interpolate', ['linear'], ['get', numericalProp], 0, 0, max, 1],
-                    // Increase the heatmap color weight weight by zoom level
-                    // heatmap-intensity is a multiplier on top of heatmap-weight
-                    'heatmap-intensity': 3,
-                    // Color ramp for heatmap.  Domain is 0 (low) to 1 (high).
-                    // Begin color ramp at 0-stop with a 0-transparancy color
-                    // to create a blur-like effect.
-                    'heatmap-color': [
-                        'interpolate',
-                        ['linear'],
-                        ['heatmap-density'],
-                        0,
-                        'rgba(33,102,172,0)',
-                        0.2,
-                        'rgb(103,169,207)',
-                        0.4,
-                        'rgb(209,229,240)',
-                        0.6,
-                        'rgb(253,219,199)',
-                        0.8,
-                        'rgb(239,138,98)',
-                        1,
-                        'rgb(178,24,43)',
-                    ],
-                    'heatmap-radius': ['interpolate', ['linear'], ['zoom'], 0, 5, 12, 30],
-                    'heatmap-opacity': ['interpolate', ['linear'], ['zoom'], 13, 0.9, 14, 0],
-                }}
-            />
             {showStations ? (
                 <Layer
+                    key={'stations-status'}
                     type={'symbol'}
                     id={'stations-locations'}
                     sourceId={'stations'}
@@ -320,7 +288,41 @@ export default function Heatmap({ file, showStations, numericalProp }: HeatmapPr
                     paint={{}}
                 />
             ) : (
-                <></>
+                <Layer
+                    key={'stations-heatmap'}
+                    type="heatmap"
+                    id="bike-heatmap"
+                    sourceId={'stations'}
+                    paint={{
+                        // Increase the heatmap weight based on frequency and property magnitude
+                        'heatmap-weight': ['interpolate', ['linear'], ['get', numericalProp], 0, 0, max, 1],
+                        // Increase the heatmap color weight weight by zoom level
+                        // heatmap-intensity is a multiplier on top of heatmap-weight
+                        'heatmap-intensity': 3,
+                        // Color ramp for heatmap.  Domain is 0 (low) to 1 (high).
+                        // Begin color ramp at 0-stop with a 0-transparancy color
+                        // to create a blur-like effect.
+                        'heatmap-color': [
+                            'interpolate',
+                            ['linear'],
+                            ['heatmap-density'],
+                            0,
+                            'rgba(33,102,172,0)',
+                            0.2,
+                            'rgb(103,169,207)',
+                            0.4,
+                            'rgb(209,229,240)',
+                            0.6,
+                            'rgb(253,219,199)',
+                            0.8,
+                            'rgb(239,138,98)',
+                            1,
+                            'rgb(178,24,43)',
+                        ],
+                        'heatmap-radius': ['interpolate', ['linear'], ['zoom'], 0, 5, 12, 30],
+                        'heatmap-opacity': ['interpolate', ['linear'], ['zoom'], 13, 0.9, 14, 0],
+                    }}
+                />
             )}
         </Mapbox>
     );
