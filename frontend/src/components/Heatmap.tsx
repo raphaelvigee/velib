@@ -1,27 +1,19 @@
+import * as ReactDOM from 'react-dom';
 import { useEffect, useMemo, useRef } from 'react';
 import styles from './Heatmap.scss?module';
 import * as mapboxgl from 'mapbox-gl';
 import ReactMapboxGl, { Layer, Source } from 'react-mapbox-gl';
 import * as React from 'react';
-import { DataFile, DataFileStation, useStationsData } from '../hooks/useDataFiles';
+import { DataFile, useStationsData } from '../hooks/useDataFiles';
+import { Point } from 'geojson';
+import useStationsGeojson, { StationFeature } from '../hooks/useStationsGeojson';
+import StationPopup from './StationPopup';
 
 export type NumericalPropType =
     | 'bikes_available'
     | 'bikes_available_mechanical'
     | 'bikes_available_ebike'
     | 'docks_available';
-
-function findBikesType<S extends DataFileStation, P extends 'mechanical' | 'ebike'>(s: S, prop: P): number {
-    const bikeType = s.num_bikes_available_types.find((t) => prop in t);
-
-    if (bikeType) {
-        const typedType = (bikeType as unknown) as { [k in P]: number };
-
-        return typedType[prop];
-    }
-
-    return 0;
-}
 
 interface DrawPiechartProps {
     canvas: HTMLCanvasElement;
@@ -128,11 +120,11 @@ function drawText({ canvas, text, color }: DrawTextProps) {
     ctx.fillText(text, canvas.width / 2, canvas.height / 2);
 }
 
-function fromEntries<T>(iterable: Array<[string, T]>): { [key: string]: T } {
-    return [...iterable].reduce<{ [key: string]: T }>((obj, [key, val]) => {
-        obj[key] = val;
-        return obj;
-    }, {});
+function newReactPopup(el: JSX.Element) {
+    const placeholder = document.createElement('div');
+    ReactDOM.render(el, placeholder);
+
+    return new mapboxgl.Popup().setDOMContent(placeholder);
 }
 
 const colors = { mechanical: '#6ba553', ebike: '#16a2a8', dock: '#d468c9' };
@@ -149,46 +141,7 @@ interface HeatmapProps {
 
 export default function Heatmap({ file, showStations, numericalProp }: HeatmapProps) {
     const stations = useStationsData(file);
-
-    const mappedFeatures = useMemo(() => {
-        const pairs = stations
-            .filter((s) => !!s.station)
-            .map((s) => {
-                const stationData = s.station!;
-
-                const feature = {
-                    type: 'Feature',
-                    properties: {
-                        station_id: s.station_id,
-                        station_name: stationData.name,
-
-                        bikes_available: s.num_bikes_available,
-                        bikes_available_mechanical: findBikesType(s, 'mechanical'),
-                        bikes_available_ebike: findBikesType(s, 'ebike'),
-                        docks_available: s.num_docks_available,
-                        is_installed: s.is_installed,
-
-                        is_functional: s.is_installed && s.is_renting && s.is_returning,
-                    },
-                    geometry: {
-                        type: 'Point',
-                        coordinates: [stationData.lon, stationData.lat, 0],
-                    },
-                };
-
-                return [`${s.station_id}`, feature] as [string, typeof feature];
-            });
-
-        return fromEntries(pairs);
-    }, [stations]);
-
-    const geojson = useMemo(
-        () => ({
-            type: 'FeatureCollection',
-            features: Object.values(mappedFeatures),
-        }),
-        [mappedFeatures],
-    );
+    const { geojson, map: mappedFeatures } = useStationsGeojson(stations);
 
     const max = useMemo(() => Math.max(...geojson.features.map((f) => f.properties[numericalProp])), [
         geojson,
@@ -301,6 +254,22 @@ export default function Heatmap({ file, showStations, numericalProp }: HeatmapPr
                         map.addImage(id, im);
                         return;
                     }
+                });
+
+                map.on('click', 'stations-locations', (e) => {
+                    const feature = ((e.features as unknown) as StationFeature[])[0];
+                    const coordinates = (feature.geometry as Point).coordinates.slice() as [number, number];
+
+                    // Ensure that if the map is zoomed out such that multiple
+                    // copies of the feature are visible, the popup appears
+                    // over the copy being pointed to.
+                    while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
+                        coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
+                    }
+
+                    newReactPopup(<StationPopup feature={feature} />)
+                        .setLngLat(coordinates)
+                        .addTo(map);
                 });
             }}
         >

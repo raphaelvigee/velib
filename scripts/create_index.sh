@@ -34,11 +34,6 @@ do
     continue
   fi
 
-  if [[ "${FILENAME}" == "stations.json" ]]; then
-    echo "Ignored"
-    continue
-  fi
-
   echo "Adding to index"
 
   echo "${FILENAME}" >> "${INDEX_PATH}"

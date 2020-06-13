@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import useStations, { Station } from './useStations';
-import { STATIONS_STATUS_FOLDER_URL, STATIONS_STATUS_INDEX_URL } from '../config';
+import { STATIONS_AGGREGATE_FOLDER_URL, STATIONS_STATUS_FOLDER_URL } from '../config';
 import { DateTime } from 'luxon';
 
 export interface DataFile {
@@ -8,11 +8,22 @@ export interface DataFile {
     date: DateTime;
 }
 
-async function fetchAvailableData(): Promise<DataFile[]> {
-    const res = await fetch(STATIONS_STATUS_INDEX_URL);
+async function fetchJson<R>(url: string): Promise<R> {
+    const res = await fetch(url);
+    const data = await res.json();
+
+    return data;
+}
+
+async function fetchLines<R>(url: string): Promise<string[]> {
+    const res = await fetch(url);
     const data = await res.text();
 
-    const files = data.split('\n').filter((l) => l.length > 0);
+    return data.split('\n').filter((l) => l.length > 0);
+}
+
+async function fetchAvailableData(): Promise<DataFile[]> {
+    const files = await fetchLines(`${STATIONS_STATUS_FOLDER_URL}/index.txt`);
 
     return files.map((file) => {
         const dateStr = file.replace('.json', '');
@@ -27,8 +38,7 @@ async function fetchAvailableData(): Promise<DataFile[]> {
 }
 
 async function fetchDataFileStations(file: DataFile): Promise<DataFileStation[]> {
-    const res = await fetch(file.url);
-    const data = await res.json();
+    const data = await fetchJson<any>(file.url);
 
     return data.data.stations;
 }
@@ -64,7 +74,7 @@ export interface DataFileStation {
     last_reported: number;
 }
 
-interface EnhancedDataFileStation extends DataFileStation {
+export interface EnhancedDataFileStation extends DataFileStation {
     station: Station | null;
 }
 
@@ -90,4 +100,14 @@ export function useStationsData(file: DataFile) {
     }, [file]);
 
     return stations;
+}
+
+export function useStationHistoricalData(stationId: number) {
+    const [data, setData] = useState<DataFileStation[] | null>(null);
+
+    useEffect(() => {
+        fetchJson(`${STATIONS_AGGREGATE_FOLDER_URL}/${stationId}.json`).then(setData);
+    }, [stationId]);
+
+    return data;
 }
