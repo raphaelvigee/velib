@@ -1,5 +1,5 @@
 import * as ReactDOM from 'react-dom';
-import { useEffect, useMemo, useRef } from 'react';
+import { useMemo } from 'react';
 import styles from './Heatmap.scss?module';
 import * as mapboxgl from 'mapbox-gl';
 import ReactMapboxGl, { Layer, Source } from 'react-mapbox-gl';
@@ -103,23 +103,6 @@ function drawCircle({ canvas, fill, stroke }: DrawUnavailableProps) {
     }
 }
 
-interface DrawTextProps {
-    canvas: HTMLCanvasElement;
-    text: string;
-    color: string;
-}
-
-function drawText({ canvas, text, color }: DrawTextProps) {
-    const ctx = canvas.getContext('2d')!;
-
-    ctx.fillStyle = color;
-    ctx.font = '400 22px Arial';
-    ctx.textBaseline = 'middle';
-    ctx.textAlign = 'center';
-
-    ctx.fillText(text, canvas.width / 2, canvas.height / 2);
-}
-
 function newReactPopup(el: JSX.Element) {
     const placeholder = document.createElement('div');
     ReactDOM.render(el, placeholder);
@@ -141,24 +124,61 @@ interface HeatmapProps {
 
 export default function Heatmap({ file, showStations, numericalProp }: HeatmapProps) {
     const stations = useStationsData(file);
-    const { geojson, map: mappedFeatures } = useStationsGeojson(stations);
+    const { geojson } = useStationsGeojson(stations);
 
     const max = useMemo(() => Math.max(...geojson.features.map((f) => f.properties[numericalProp])), [
         geojson,
         numericalProp,
     ]);
 
-    // That's a hack to have a constant ref in the mapbox callbacks
-    const store = useRef({
-        mappedFeatures,
-    });
-    useEffect(() => {
-        store.current = {
-            mappedFeatures,
-        };
-    }, [mappedFeatures]);
-
     const center = useMemo(() => [2.3488, 48.8534] as [number, number], []);
+
+    function generateLayer() {
+        const key = `stations-status`;
+
+        const value = ['get', numericalProp];
+
+        const baseLayout = {
+            'symbol-sort-key': ['interpolate', ['linear'], value, 0, max, max, 0],
+            'icon-size': 0.5,
+            'text-size': 11,
+        };
+
+        if (numericalProp === 'bikes_available') {
+            return (
+                <Layer
+                    key={key}
+                    type={'symbol'}
+                    id={'stations-locations'}
+                    sourceId={'stations'}
+                    layout={{
+                        ...baseLayout,
+                        'icon-image': `stationv1::${numericalProp}::{bikes_available_mechanical}::{bikes_available_ebike}::{docks_available}`,
+                        'text-field': value,
+                    }}
+                    filter={['get', 'is_functional']}
+                />
+            );
+        }
+
+        return (
+            <Layer
+                key={key}
+                type={'symbol'}
+                id={'stations-locations'}
+                sourceId={'stations'}
+                layout={{
+                    ...baseLayout,
+                    'icon-image': `stationv1::${numericalProp}`,
+                    'text-field': value,
+                }}
+                paint={{
+                    'text-color': 'white',
+                }}
+                filter={['get', 'is_functional']}
+            />
+        );
+    }
 
     return (
         <Mapbox
@@ -186,67 +206,46 @@ export default function Heatmap({ file, showStations, numericalProp }: HeatmapPr
                     const [genId, ...dataStr] = id.split('::');
 
                     if (genId === 'stationv1') {
-                        const [stationId, numProp]: [string, NumericalPropType] = dataStr;
-                        const feature = store.current.mappedFeatures[stationId];
+                        const [numProp, ...args] = dataStr;
 
-                        if (!feature) {
-                            return;
-                        }
+                        switch (numProp as NumericalPropType | 'unavailable') {
+                            case 'unavailable':
+                                drawCircle({ canvas, fill: '#fc6262', stroke: { width: 6, color: '#fff' } });
 
-                        const props = feature.properties;
+                                ctx.fillStyle = '#fff';
 
-                        if (props.is_functional) {
-                            switch (numProp) {
-                                case 'bikes_available':
-                                    drawPiechart({
-                                        canvas,
-                                        data: [
-                                            props.bikes_available_mechanical,
-                                            props.bikes_available_ebike,
-                                            props.docks_available,
-                                        ],
-                                        colors: [colors.mechanical, colors.ebike, colors.dock],
-                                        doughnutHoleSize: 0.7,
-                                    });
-                                    break;
-                                case 'bikes_available_mechanical':
-                                    drawCircle({
-                                        canvas,
-                                        fill: colors.mechanical,
-                                    });
-                                    break;
-                                case 'bikes_available_ebike':
-                                    drawCircle({ canvas, fill: colors.ebike });
-                                    break;
-                                case 'docks_available':
-                                    drawCircle({ canvas, fill: colors.dock });
-                                    break;
-                            }
+                                const recWidth = 26;
+                                const recHeight = 8;
+                                const xPos = canvas.width / 2 - recWidth / 2;
+                                const yPos = canvas.height / 2 - recHeight / 2;
+                                ctx.fillRect(xPos, yPos, recWidth, recHeight);
+                                break;
+                            case 'bikes_available':
+                                const [mechanicalStr, ebikeStr, dockStr] = args;
 
-                            const getTextColor = () => {
-                                switch (numProp) {
-                                    case 'bikes_available':
-                                        return '#000';
-                                    default:
-                                        return '#fff';
-                                }
-                            };
+                                const mechanical = parseInt(mechanicalStr);
+                                const ebike = parseInt(ebikeStr);
+                                const dock = parseInt(dockStr);
 
-                            drawText({
-                                canvas,
-                                text: `${props[numProp]}`,
-                                color: getTextColor(),
-                            });
-                        } else {
-                            drawCircle({ canvas, fill: '#fc6262', stroke: { width: 6, color: '#fff' } });
-
-                            ctx.fillStyle = '#fff';
-
-                            const recWidth = 26;
-                            const recHeight = 8;
-                            const xPos = canvas.width / 2 - recWidth / 2;
-                            const yPos = canvas.height / 2 - recHeight / 2;
-                            ctx.fillRect(xPos, yPos, recWidth, recHeight);
+                                drawPiechart({
+                                    canvas,
+                                    data: [mechanical, ebike, dock],
+                                    colors: [colors.mechanical, colors.ebike, colors.dock],
+                                    doughnutHoleSize: 0.7,
+                                });
+                                break;
+                            case 'bikes_available_mechanical':
+                                drawCircle({
+                                    canvas,
+                                    fill: colors.mechanical,
+                                });
+                                break;
+                            case 'bikes_available_ebike':
+                                drawCircle({ canvas, fill: colors.ebike });
+                                break;
+                            case 'docks_available':
+                                drawCircle({ canvas, fill: colors.dock });
+                                break;
                         }
 
                         const im = ctx.getImageData(0, 0, canvas.width, canvas.height);
@@ -255,6 +254,8 @@ export default function Heatmap({ file, showStations, numericalProp }: HeatmapPr
                         map.addImage(id, im);
                         return;
                     }
+
+                    console.error(`Unhandled image: ${id}`);
                 });
 
                 map.on('click', 'stations-locations', (e) => {
@@ -276,18 +277,21 @@ export default function Heatmap({ file, showStations, numericalProp }: HeatmapPr
         >
             <Source id={'stations'} geoJsonSource={{ type: 'geojson', data: geojson }} />
             {showStations ? (
-                <Layer
-                    key={'stations-status'}
-                    type={'symbol'}
-                    id={'stations-locations'}
-                    sourceId={'stations'}
-                    layout={{
-                        'symbol-sort-key': ['interpolate', ['linear'], ['get', numericalProp], 0, max, max, 0],
-                        'icon-image': `stationv1::{station_id}::${numericalProp}::${file.date.toSeconds()}`,
-                        'icon-size': 0.5,
-                    }}
-                    paint={{}}
-                />
+                <>
+                    {generateLayer()}
+                    <Layer
+                        key={'unavailable-stations-locations'}
+                        type={'symbol'}
+                        id={'unavailable-stations-locations'}
+                        sourceId={'stations'}
+                        layout={{
+                            'icon-image': `stationv1::unavailable`,
+                            'icon-size': 0.5,
+                        }}
+                        filter={['!', ['get', 'is_functional']]}
+                        before={'stations-locations'}
+                    />
+                </>
             ) : (
                 <Layer
                     key={'stations-heatmap'}
