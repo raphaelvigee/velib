@@ -25,16 +25,16 @@ jobs:
     - name: Downloads stations list
       run: curl "https://velib-metropole-opendata.smoove.pro/opendata/Velib_Metropole/station_information.json" -o "gh-pages/data/raw/stations.json"
 
-    - name: Use Node.js 12.x
-      uses: actions/setup-node@v1
-      with:
-        node-version: 12.x
-    - name: Create stations index
-      run: main/scripts/create_index.sh gh-pages/data/raw/stations
-    - name: Aggregate stations data
-      run: node main/scripts/aggregate_stations.js gh-pages/data/raw/stations gh-pages/data/stations_aggregate
-    - name: Create stations aggregate index
-      run: main/scripts/create_index.sh gh-pages/data/stations_aggregate
+ #   - name: Use Node.js 12.x
+ #     uses: actions/setup-node@v1
+ #     with:
+ #       node-version: 12.x
+ #   - name: Create stations index
+ #     run: main/scripts/create_index.sh gh-pages/data/raw/stations
+ #   - name: Aggregate stations data
+ #     run: node main/scripts/aggregate_stations.js gh-pages/data/raw/stations gh-pages/data/stations_aggregate
+ #   - name: Create stations aggregate index
+ #     run: main/scripts/create_index.sh gh-pages/data/stations_aggregate
 
     - name: Commit
       working-directory: gh-pages
